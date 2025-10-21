@@ -9,6 +9,7 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { getImageUrl } from '../utils/imageUtils';
 
 const ProblemCard = ({ problem, onUpvote, hasUpvoted = false }) => {
   const {
@@ -94,7 +95,7 @@ const ProblemCard = ({ problem, onUpvote, hasUpvoted = false }) => {
         {images && images.length > 0 && (
           <div className="mb-4">
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${images[0].url}`}
+              src={getImageUrl(images[0].url)}
               alt="Problem"
               className="w-full h-32 object-cover rounded-lg"
             />

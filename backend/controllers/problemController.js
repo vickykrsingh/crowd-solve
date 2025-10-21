@@ -1,5 +1,6 @@
 import Problem from '../models/Problem.js';
 import Solution from '../models/Solution.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
 
 export const createProblem = async (req, res) => {
@@ -7,24 +8,48 @@ export const createProblem = async (req, res) => {
     const { title, description, location, category, priority } = req.body;
     const userId = req.user._id;
 
-    if (!title || !description || !location || !category) {
+    console.log('Create problem request:', { title, description, location, category, priority, files: req.files?.length });
+
+    if (!title || !description || !category) {
       return validationErrorResponse(res, {
         title: !title ? 'Title is required' : null,
         description: !description ? 'Description is required' : null,
-        location: !location ? 'Location is required' : null,
         category: !category ? 'Category is required' : null
       });
     }
 
-    const images = req.files ? req.files.map(file => ({
-      url: `/uploads/${file.filename}`,
-      publicId: file.filename
-    })) : [];
+    // Upload images to Cloudinary
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          const uploadResult = await uploadToCloudinary(file, 'crowd-solve/problems');
+          images.push({
+            url: uploadResult.url,
+            publicId: uploadResult.publicId
+          });
+        } catch (uploadError) {
+          console.error('Image upload error:', uploadError);
+          // Continue with other images even if one fails
+        }
+      }
+    }
+
+    // Parse location if provided
+    let locationData = null;
+    if (location) {
+      try {
+        locationData = typeof location === 'string' ? JSON.parse(location) : location;
+      } catch (parseError) {
+        console.error('Location parse error:', parseError);
+        locationData = { address: location }; // Fallback to address only
+      }
+    }
 
     const problem = new Problem({
       title,
       description,
-      location: typeof location === 'string' ? JSON.parse(location) : location,
+      location: locationData,
       category,
       priority: priority || 'Medium',
       author: userId,
@@ -34,6 +59,7 @@ export const createProblem = async (req, res) => {
     await problem.save();
     await problem.populate('author', 'username avatar');
 
+    console.log('Problem created successfully:', problem._id);
     successResponse(res, problem, 'Problem created successfully', 201);
   } catch (error) {
     console.error('Create problem error:', error);

@@ -20,7 +20,7 @@ const problemSchema = new mongoose.Schema({
         index: '2dsphere'
       }
     },
-    required: [true, 'Location is required']
+    required: false
   },
   images: [{
     url: String,

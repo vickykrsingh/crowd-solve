@@ -14,6 +14,7 @@ import {
   TagIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { getImageUrl } from '../utils/imageUtils';
 
 const ProblemDetail = () => {
   const { id } = useParams();
@@ -178,7 +179,7 @@ const ProblemDetail = () => {
               {problem.images.map((image, index) => (
                 <div key={index} className="relative group">
                   <img
-                    src={`${import.meta.env.VITE_API_URL}${image}`}
+                    src={getImageUrl(image.url || image)}
                     alt={`Problem image ${index + 1}`}
                     className="w-full h-48 object-cover rounded-lg"
                   />

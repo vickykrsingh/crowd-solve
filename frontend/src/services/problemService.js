@@ -17,7 +17,7 @@ export const problemService = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    return response.data; // Returns the full API response: { success, message, data }
   },
 
   updateProblem: async (id, problemData) => {

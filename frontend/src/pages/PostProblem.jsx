@@ -183,10 +183,19 @@ const PostProblem = () => {
       });
 
       const response = await problemService.createProblem(submitData);
-      toast.success('Problem posted successfully!');
-      navigate(`/problems/${response.data.problem._id}`);
+      console.log('Create problem response:', response);
+      
+      // Check if the response indicates success
+      if (response.success && response.data) {
+        toast.success('Problem posted successfully!');
+        navigate(`/problems/${response.data._id}`);
+      } else {
+        throw new Error(response.message || 'Failed to create problem');
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to post problem');
+      console.error('Problem creation error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to post problem';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
