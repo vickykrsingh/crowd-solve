@@ -9,7 +9,7 @@ import {
   acceptSolution
 } from '../controllers/solutionController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { uploadMultiple } from '../utils/upload.js';
+import { uploadMultiple } from '../lib/upload.js';
 
 const router = express.Router();
 

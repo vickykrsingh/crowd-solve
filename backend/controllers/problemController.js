@@ -1,6 +1,6 @@
 import Problem from '../models/Problem.js';
 import Solution from '../models/Solution.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
+import { uploadToCloudinary } from '../lib/upload.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
 
 export const createProblem = async (req, res) => {
@@ -23,10 +23,13 @@ export const createProblem = async (req, res) => {
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         try {
-          const uploadResult = await uploadToCloudinary(file, 'crowd-solve/problems');
+          const uploadResult = await uploadToCloudinary(file.buffer, { 
+            folder: 'crowd-solve/problems',
+            public_id: `problem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          });
           images.push({
-            url: uploadResult.url,
-            publicId: uploadResult.publicId
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id
           });
         } catch (uploadError) {
           console.error('Image upload error:', uploadError);

@@ -8,7 +8,7 @@ import {
   upvoteProblem 
 } from '../controllers/problemController.js';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
-import { uploadMultiple } from '../utils/upload.js';
+import { uploadMultiple } from '../lib/upload.js';
 
 const router = express.Router();
 

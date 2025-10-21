@@ -1,6 +1,7 @@
 import Solution from '../models/Solution.js';
 import Problem from '../models/Problem.js';
 import User from '../models/User.js';
+import { uploadToCloudinary } from '../lib/upload.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
 import { NotificationService } from '../utils/notificationService.js';
 
@@ -21,10 +22,25 @@ export const createSolution = async (req, res) => {
       return errorResponse(res, 'Problem not found', 404);
     }
 
-    const images = req.files ? req.files.map(file => ({
-      url: `/uploads/${file.filename}`,
-      publicId: file.filename
-    })) : [];
+    // Upload images to Cloudinary
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          const uploadResult = await uploadToCloudinary(file.buffer, { 
+            folder: 'crowd-solve/solutions',
+            public_id: `solution_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          });
+          images.push({
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id
+          });
+        } catch (uploadError) {
+          console.error('Solution image upload error:', uploadError);
+          // Continue with other images even if one fails
+        }
+      }
+    }
 
     const solution = new Solution({
       content,
