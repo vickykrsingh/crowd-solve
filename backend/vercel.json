@@ -1,26 +1,11 @@
 {
-  "version": 2,
-  "name": "crowd-solve-api",
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
+    "version": 2,
+      
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/api",
+        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
       }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
+    ]
   }
-}
