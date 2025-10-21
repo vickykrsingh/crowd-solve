@@ -122,13 +122,32 @@ if (!isProduction) {
 }
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://crowdsolved.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
+console.log('CORS allowed origins:', allowedOrigins);
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Is Vercel:', !!process.env.VERCEL);
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://crowdsolved.vercel.app',
-    process.env.CLIENT_URL
-  ].filter(Boolean),
+  origin: function (origin, callback) {
+    console.log('CORS request from origin:', origin);
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      console.log('CORS allowed for:', origin);
+      callback(null, true);
+    } else {
+      console.log('CORS blocked for:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -145,6 +164,17 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     message: 'Crowd Solve API is running',
     timestamp: new Date().toISOString()
+  });
+});
+
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.json({
+    message: 'CORS is working!',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    isVercel: !!process.env.VERCEL
   });
 });
 
