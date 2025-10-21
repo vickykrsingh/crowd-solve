@@ -11,6 +11,8 @@ import problemRoutes from './routes/problems.js';
 import solutionRoutes from './routes/solutions.js';
 import commentRoutes from './routes/comments.js';
 import upvoteRoutes from './routes/upvotes.js';
+import notificationRoutes from './routes/notifications.js';
+import userRoutes from './routes/users.js';
 
 dotenv.config();
 
@@ -43,20 +45,85 @@ app.use('/api/problems', problemRoutes);
 app.use('/api/solutions', solutionRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/upvotes', upvoteRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
+
+// Store active viewers for each problem
+const activeViewers = new Map();
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
+  // Join user to their personal notification room
+  socket.on('join-user', (userId) => {
+    socket.join(`user-${userId}`);
+    socket.userId = userId;
+  });
+
   socket.on('join-problem', (problemId) => {
     socket.join(`problem-${problemId}`);
+    
+    // Track active viewers
+    if (!activeViewers.has(problemId)) {
+      activeViewers.set(problemId, new Set());
+    }
+    activeViewers.get(problemId).add(socket.id);
+    
+    // Broadcast current viewer count
+    const viewerCount = activeViewers.get(problemId).size;
+    io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+      problemId,
+      activeViewers: viewerCount
+    });
   });
 
   socket.on('leave-problem', (problemId) => {
     socket.leave(`problem-${problemId}`);
+    
+    // Remove from active viewers
+    if (activeViewers.has(problemId)) {
+      activeViewers.get(problemId).delete(socket.id);
+      
+      // Clean up empty sets
+      if (activeViewers.get(problemId).size === 0) {
+        activeViewers.delete(problemId);
+      }
+      
+      // Broadcast updated viewer count
+      const viewerCount = activeViewers.has(problemId) ? activeViewers.get(problemId).size : 0;
+      io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+        problemId,
+        activeViewers: viewerCount
+      });
+    }
   });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    
+    // Leave user notification room
+    if (socket.userId) {
+      socket.leave(`user-${socket.userId}`);
+    }
+    
+    // Remove user from all active viewers
+    for (const [problemId, viewers] of activeViewers) {
+      if (viewers.has(socket.id)) {
+        viewers.delete(socket.id);
+        
+        // Clean up empty sets
+        if (viewers.size === 0) {
+          activeViewers.delete(problemId);
+        }
+        
+        // Broadcast updated viewer count
+        const viewerCount = activeViewers.has(problemId) ? activeViewers.get(problemId).size : 0;
+        io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+          problemId,
+          activeViewers: viewerCount
+        });
+      }
+    }
   });
 });
 

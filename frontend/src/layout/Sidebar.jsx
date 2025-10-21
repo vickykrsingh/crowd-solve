@@ -17,6 +17,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Debug user object
+  console.log('Sidebar - user object:', user);
+  console.log('Sidebar - user._id:', user?._id);
+  console.log('Sidebar - isAuthenticated:', isAuthenticated);
+
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Problems', href: '/problems', icon: ExclamationTriangleIcon },
@@ -24,7 +29,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     ...(isAuthenticated ? [
       { name: 'Post Problem', href: '/post-problem', icon: PlusIcon },
       { name: 'My Problems', href: '/my-problems', icon: UserIcon },
-      { name: 'Profile', href: '/profile', icon: UserIcon },
+      { name: 'Profile', href: (user?._id || user?.id) ? `/profile/${user._id || user.id}` : '/profile', icon: UserIcon },
     ] : [])
   ];
 
@@ -35,6 +40,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   const isActive = (href) => {
+    if (href.includes('/profile/')) {
+      return location.pathname.startsWith('/profile/');
+    }
     return location.pathname === href;
   };
 

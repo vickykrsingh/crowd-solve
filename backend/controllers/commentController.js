@@ -2,6 +2,7 @@ import Comment from '../models/Comment.js';
 import Solution from '../models/Solution.js';
 import Problem from '../models/Problem.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
+import { NotificationService } from '../utils/notificationService.js';
 
 export const createComment = async (req, res) => {
   try {
@@ -46,6 +47,31 @@ export const createComment = async (req, res) => {
       solutionId,
       problemId: solution.problem
     });
+
+    // Send notifications
+    if (parentCommentId) {
+      // Notify parent comment author
+      const parentComment = await Comment.findById(parentCommentId).populate('author');
+      if (parentComment) {
+        await NotificationService.notifyCommentReply(
+          parentComment.author._id,
+          req.user,
+          parentComment,
+          comment,
+          io
+        );
+      }
+    } else {
+      // Notify solution author
+      await solution.populate('author');
+      await NotificationService.notifyNewComment(
+        solution.author._id,
+        req.user,
+        solution,
+        comment,
+        io
+      );
+    }
 
     successResponse(res, comment, 'Comment created successfully', 201);
   } catch (error) {
@@ -226,6 +252,17 @@ export const upvoteComment = async (req, res) => {
       solutionId: comment.solution,
       problemId: comment.problem
     });
+
+    // Send notification for new upvote only
+    if (!existingUpvote) {
+      await comment.populate('author');
+      await NotificationService.notifyCommentUpvoted(
+        comment.author._id,
+        req.user,
+        comment,
+        io
+      );
+    }
 
     successResponse(res, {
       upvoteCount: comment.upvoteCount,

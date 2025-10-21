@@ -143,6 +143,15 @@ export const getProblemById = async (req, res) => {
       return errorResponse(res, 'Problem not found', 404);
     }
 
+    // Emit real-time view count update
+    const io = req.app.get('socketio');
+    if (io) {
+      io.to(`problem-${id}`).emit('view-count-updated', {
+        problemId: id,
+        views: problem.views
+      });
+    }
+
     successResponse(res, problem, 'Problem retrieved successfully');
   } catch (error) {
     console.error('Get problem error:', error);

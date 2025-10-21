@@ -10,6 +10,7 @@ import ProblemsPage from './pages/ProblemsPage';
 import ProblemDetail from './pages/ProblemDetail';
 import PostProblem from './pages/PostProblem';
 import SolutionsPage from './pages/SolutionsPage';
+import Profile from './pages/Profile';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,6 +38,20 @@ const PublicRoute = ({ children }) => {
   }
   
   return !isAuthenticated ? children : <Navigate to="/" />;
+};
+
+const ProfileRedirect = () => {
+  const { user, isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (user?._id || user?.id) {
+    return <Navigate to={`/profile/${user._id || user.id}`} />;
+  }
+  
+  return <Navigate to="/" />;
 };
 
 function App() {
@@ -81,6 +96,8 @@ function App() {
               <Route path="problems/:id" element={<ProblemDetail />} />
               <Route path="post-problem" element={<PostProblem />} />
               <Route path="solutions" element={<SolutionsPage />} />
+              <Route path="profile" element={<ProfileRedirect />} />
+              <Route path="profile/:userId" element={<Profile />} />
             </Route>
           </Routes>
         </div>

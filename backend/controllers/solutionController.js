@@ -2,6 +2,7 @@ import Solution from '../models/Solution.js';
 import Problem from '../models/Problem.js';
 import User from '../models/User.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
+import { NotificationService } from '../utils/notificationService.js';
 
 export const createSolution = async (req, res) => {
   try {
@@ -44,6 +45,15 @@ export const createSolution = async (req, res) => {
       solution,
       problemId
     });
+
+    // Send notification to problem author
+    await NotificationService.notifyNewSolution(
+      problem.author,
+      req.user,
+      problem,
+      solution,
+      io
+    );
 
     successResponse(res, solution, 'Solution created successfully', 201);
   } catch (error) {
@@ -219,6 +229,17 @@ export const upvoteSolution = async (req, res) => {
       hasUpvoted: !existingUpvote,
       problemId: solution.problem
     });
+
+    // Send notification for new upvote only
+    if (!existingUpvote) {
+      await solution.populate('author');
+      await NotificationService.notifySolutionUpvoted(
+        solution.author._id,
+        req.user,
+        solution,
+        io
+      );
+    }
 
     successResponse(res, {
       upvoteCount: solution.upvoteCount,

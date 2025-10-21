@@ -41,14 +41,20 @@ export const optionalAuth = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = verifyToken(token);
-      const user = await User.findById(decoded.userId).select('-password');
-      if (user && user.isActive) {
-        req.user = user;
+      try {
+        const decoded = verifyToken(token);
+        const user = await User.findById(decoded.userId).select('-password');
+        if (user && user.isActive) {
+          req.user = user;
+        }
+      } catch (tokenError) {
+        // Token is invalid, but this is optional auth, so continue without user
+        console.log('Optional auth token error:', tokenError.message);
       }
     }
     next();
   } catch (error) {
+    console.error('Optional auth error:', error);
     next();
   }
 };

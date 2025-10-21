@@ -265,35 +265,26 @@ const ProblemDetail = () => {
                 
                 return (
                   <div key={index} className="relative group">
-                    <>
-                      {/* Test with a known working image first */}
-                      <img
-                        src="https://via.placeholder.com/300x200?text=Test+Image"
-                        alt="Test"
-                        className="w-full h-48 object-cover rounded-lg mb-2"
-                        onLoad={() => console.log('✅ Test image loaded')}
-                        onError={() => console.log('❌ Test image failed')}
-                      />
-                      
-                      {/* Original Cloudinary image */}
-                      <img
-                        src={fullImageUrl}
-                        alt={`Problem image ${index + 1}`}
-                        className="w-full h-48 object-cover rounded-lg"
-                        onLoad={() => {
-                          console.log('✅ Cloudinary image loaded successfully:', fullImageUrl);
-                        }}
-                        onError={(e) => {
-                          console.error('❌ Cloudinary image failed to load:', fullImageUrl);
-                          console.error('Error details:', {
-                            naturalWidth: e.target.naturalWidth,
-                            naturalHeight: e.target.naturalHeight,
-                            complete: e.target.complete,
-                            src: e.target.src
-                          });
-                        }}
-                      />
-                    </>
+                    <img
+                      src={fullImageUrl}
+                      alt={`Problem image ${index + 1}`}
+                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                      style={{ 
+                        backgroundColor: '#f3f4f6',
+                        minHeight: '192px',
+                        display: 'block'
+                      }}
+                      onLoad={(e) => {
+                        console.log('✅ Image loaded successfully:', fullImageUrl);
+                        console.log('Image dimensions:', e.target.naturalWidth, 'x', e.target.naturalHeight);
+                        e.target.style.backgroundColor = 'transparent';
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Image failed to load:', fullImageUrl);
+                        e.target.style.backgroundColor = '#fee2e2';
+                        e.target.style.border = '2px dashed #fca5a5';
+                      }}
+                    />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg"></div>
                   </div>
                 );
