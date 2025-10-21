@@ -1,12 +1,19 @@
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
+import dotenv from 'dotenv';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,  
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Ensure environment variables are loaded
+dotenv.config();
+
+// Function to configure Cloudinary (called when needed)
+const configureCloudinary = () => {
+  // Configure Cloudinary with environment variables
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,  
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+};
 
 // Configure multer for memory storage (since Vercel is serverless)
 const storage = multer.memoryStorage();
@@ -32,9 +39,14 @@ export const uploadSingle = upload.single('image');
 // Helper function to upload buffer to Cloudinary
 export const uploadToCloudinary = (buffer, options = {}) => {
   return new Promise((resolve, reject) => {
+    // Configure Cloudinary before upload
+    configureCloudinary();
+
     const uploadOptions = {
       resource_type: 'auto',
       folder: 'crowd-solve',
+      access_mode: 'public',
+      type: 'upload',
       ...options
     };
 

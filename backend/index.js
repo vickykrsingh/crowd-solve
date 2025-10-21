@@ -5,10 +5,10 @@ import morgan from 'morgan';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-// Import database connection
+// Database connection
 import connectDB from './lib/db.js';
 
-// Import routes
+// Routes
 import authRoutes from './routes/auth.js';
 import problemRoutes from './routes/problems.js';
 import solutionRoutes from './routes/solutions.js';
@@ -23,162 +23,96 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-// Create Express app
+// Initialize express app
 const app = express();
 
-// Create server and Socket.IO setup for local development
-let server, io;
+// Determine environment
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
-if (!isProduction) {
-  server = createServer(app);
-  io = new Server(server, {
-    cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:5173",
-      methods: ["GET", "POST"]
-    }
-  });
-  
-  // Store active viewers for each problem
-  const activeViewers = new Map();
-
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
-    // Join user to their personal notification room
-    socket.on('join-user', (userId) => {
-      socket.join(`user-${userId}`);
-      socket.userId = userId;
-    });
-
-    socket.on('join-problem', (problemId) => {
-      socket.join(`problem-${problemId}`);
-      
-      // Track active viewers
-      if (!activeViewers.has(problemId)) {
-        activeViewers.set(problemId, new Set());
-      }
-      activeViewers.get(problemId).add(socket.id);
-      
-      // Broadcast current viewer count
-      const viewerCount = activeViewers.get(problemId).size;
-      io.to(`problem-${problemId}`).emit('active-viewers-updated', {
-        problemId,
-        activeViewers: viewerCount
-      });
-    });
-
-    socket.on('leave-problem', (problemId) => {
-      socket.leave(`problem-${problemId}`);
-      
-      // Remove from active viewers
-      if (activeViewers.has(problemId)) {
-        activeViewers.get(problemId).delete(socket.id);
-        
-        // Clean up empty sets
-        if (activeViewers.get(problemId).size === 0) {
-          activeViewers.delete(problemId);
-        }
-        
-        // Broadcast updated viewer count
-        const viewerCount = activeViewers.has(problemId) ? activeViewers.get(problemId).size : 0;
-        io.to(`problem-${problemId}`).emit('active-viewers-updated', {
-          problemId,
-          activeViewers: viewerCount
-        });
-      }
-    });
-
-    socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
-      
-      // Leave user notification room
-      if (socket.userId) {
-        socket.leave(`user-${socket.userId}`);
-      }
-      
-      // Remove user from all active viewers
-      for (const [problemId, viewers] of activeViewers) {
-        if (viewers.has(socket.id)) {
-          viewers.delete(socket.id);
-          
-          // Clean up empty sets
-          if (viewers.size === 0) {
-            activeViewers.delete(problemId);
-          }
-          
-          // Broadcast updated viewer count
-          const viewerCount = activeViewers.has(problemId) ? activeViewers.get(problemId).size : 0;
-          io.to(`problem-${problemId}`).emit('active-viewers-updated', {
-            problemId,
-            activeViewers: viewerCount
-          });
-        }
-      }
-    });
-  });
-
-  app.set('socketio', io);
-}
-
-// Middleware
+// --- Simplified CORS Configuration ---
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://crowdsolved.vercel.app',
-  process.env.CLIENT_URL
+  'http://localhost:5173',              // Vite local
+  'http://localhost:3000',              // Next.js local
+  'https://crowdsolved.vercel.app',     // Deployed frontend
+  process.env.CLIENT_URL                // Optional env override
 ].filter(Boolean);
-
-console.log('CORS allowed origins:', allowedOrigins);
-console.log('Environment:', process.env.NODE_ENV);
-console.log('Is Vercel:', !!process.env.VERCEL);
-
+console.log(allowedOrigins)
 app.use(cors({
-  origin: function (origin, callback) {
-    console.log('CORS request from origin:', origin);
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      console.log('CORS allowed for:', origin);
-      callback(null, true);
-    } else {
-      console.log('CORS blocked for:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
 }));
 
+// Middleware
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
+// --- Health Check Route ---
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'Crowd Solve API is running',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// CORS test endpoint
-app.get('/api/cors-test', (req, res) => {
   res.json({
-    message: 'CORS is working!',
-    origin: req.headers.origin,
+    status: 'ok',
+    message: 'Crowd Solve API is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    isVercel: !!process.env.VERCEL
+    cloudinary: {
+      configured: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'not set'
+    }
   });
 });
 
-// API Routes
+// --- Test Upload Route ---
+import { uploadSingle, uploadToCloudinary } from './lib/upload.js';
+
+app.post('/api/test-upload', uploadSingle, async (req, res) => {
+  try {
+    console.log('=== TEST UPLOAD ===');
+    console.log('File received:', !!req.file);
+    console.log('Environment:', process.env.NODE_ENV);
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded',
+        debug: {
+          headers: req.headers['content-type'],
+          body: Object.keys(req.body)
+        }
+      });
+    }
+
+    console.log('File details:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      hasBuffer: !!req.file.buffer
+    });
+
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: 'crowd-solve/test'
+    });
+
+    console.log('Upload success:', result.secure_url);
+
+    res.json({
+      success: true,
+      message: 'Upload successful',
+      data: {
+        url: result.secure_url,
+        publicId: result.public_id
+      }
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Upload failed',
+      error: error.message 
+    });
+  }
+});
+
+// --- API Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
 app.use('/api/solutions', solutionRoutes);
@@ -187,9 +121,9 @@ app.use('/api/upvotes', upvoteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 
-// Default route
+// --- Default API Route ---
 app.get('/api', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Welcome to Crowd Solve API',
     version: '1.0.0',
     endpoints: [
@@ -204,7 +138,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Error handling middleware
+// --- Error Handling Middleware ---
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({
@@ -214,21 +148,95 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
+// --- 404 Handler ---
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route ${req.originalUrl} not found`
   });
 });
 
-// Start server for local development
+// --- Socket.IO Setup (only for local/dev) ---
 if (!isProduction) {
+  const server = createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: allowedOrigins,
+      credentials: true,
+      methods: ['GET', 'POST']
+    }
+  });
+
+  const activeViewers = new Map();
+
+  io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+
+    // Join notification room
+    socket.on('join-user', (userId) => {
+      socket.join(`user-${userId}`);
+      socket.userId = userId;
+    });
+
+    // Problem viewer tracking
+    socket.on('join-problem', (problemId) => {
+      socket.join(`problem-${problemId}`);
+      if (!activeViewers.has(problemId)) {
+        activeViewers.set(problemId, new Set());
+      }
+      activeViewers.get(problemId).add(socket.id);
+
+      const viewerCount = activeViewers.get(problemId).size;
+      io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+        problemId,
+        activeViewers: viewerCount
+      });
+    });
+
+    socket.on('leave-problem', (problemId) => {
+      socket.leave(`problem-${problemId}`);
+      if (activeViewers.has(problemId)) {
+        activeViewers.get(problemId).delete(socket.id);
+        if (activeViewers.get(problemId).size === 0) {
+          activeViewers.delete(problemId);
+        }
+        const viewerCount = activeViewers.has(problemId) ? activeViewers.get(problemId).size : 0;
+        io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+          problemId,
+          activeViewers: viewerCount
+        });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('User disconnected:', socket.id);
+      if (socket.userId) socket.leave(`user-${socket.userId}`);
+
+      for (const [problemId, viewers] of activeViewers) {
+        if (viewers.has(socket.id)) {
+          viewers.delete(socket.id);
+          if (viewers.size === 0) activeViewers.delete(problemId);
+
+          const viewerCount = activeViewers.has(problemId)
+            ? activeViewers.get(problemId).size
+            : 0;
+          io.to(`problem-${problemId}`).emit('active-viewers-updated', {
+            problemId,
+            activeViewers: viewerCount
+          });
+        }
+      }
+    });
+  });
+
+  app.set('socketio', io);
+
+  // Start server only locally
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
-// Export the Express app for Vercel
+// --- Export Express App for Vercel ---
 export default app;

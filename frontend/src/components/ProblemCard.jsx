@@ -98,8 +98,6 @@ const ProblemCard = ({ problem, onUpvote, hasUpvoted = false }) => {
               src={getImageUrl(images[0].url)}
               alt="Problem"
               className="w-full h-32 object-cover rounded-lg"
-              onLoad={() => console.log('ProblemCard image loaded:', getImageUrl(images[0].url))}
-              onError={() => console.log('ProblemCard image failed:', getImageUrl(images[0].url))}
             />
             {images.length > 1 && (
               <div className="mt-2 text-xs text-gray-500">

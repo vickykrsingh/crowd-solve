@@ -7,8 +7,13 @@ export const createProblem = async (req, res) => {
   try {
     const { title, description, location, category, priority } = req.body;
     const userId = req.user._id;
+    const isDev = process.env.NODE_ENV === 'development';
 
-    console.log('Create problem request:', { title, description, location, category, priority, files: req.files?.length });
+    if (isDev) {
+      console.log('=== CREATE PROBLEM (DEV) ===');
+      console.log('Files received:', req.files?.length || 0);
+      console.log('Body fields:', Object.keys(req.body));
+    }
 
     if (!title || !description || !category) {
       return validationErrorResponse(res, {
@@ -20,17 +25,38 @@ export const createProblem = async (req, res) => {
 
     // Upload images to Cloudinary
     const images = [];
+    
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         try {
+          if (isDev) {
+            console.log('Processing file:', {
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+              hasBuffer: !!file.buffer,
+              bufferSize: file.buffer ? file.buffer.length : 0
+            });
+          }
+
           const uploadResult = await uploadToCloudinary(file.buffer, { 
             folder: 'crowd-solve/problems',
-            public_id: `problem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            public_id: `problem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            access_mode: 'public',
+            resource_type: 'image',
+            transformation: [
+              { width: 1200, height: 800, crop: 'limit', quality: 'auto' }
+            ]
           });
+          
           images.push({
             url: uploadResult.secure_url,
             publicId: uploadResult.public_id
           });
+          
+          if (isDev) {
+            console.log('Image uploaded successfully:', uploadResult.secure_url);
+          }
         } catch (uploadError) {
           console.error('Image upload error:', uploadError);
           // Continue with other images even if one fails

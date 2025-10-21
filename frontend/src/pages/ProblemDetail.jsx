@@ -37,23 +37,15 @@ const ProblemDetail = () => {
   const fetchProblem = async () => {
     try {
       setLoading(true);
-      console.log('Fetching problem with ID:', id);
-      
       const response = await problemService.getProblemById(id);
-      console.log('Full API response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response success:', response.success);
       
       if (response.success && response.data) {
-        console.log('Problem data received:', response.data);
-        console.log('Problem images:', response.data.images);
         setProblem(response.data);
       } else {
         throw new Error('Problem not found in response');
       }
     } catch (error) {
-      console.error('Problem fetch error:', error);
-      console.error('Error response:', error.response);
+      console.error('Failed to fetch problem details:', error);
       
       if (error.response?.status === 404) {
         toast.error('Problem not found');
@@ -267,36 +259,20 @@ const ProblemDetail = () => {
               <PhotoIcon className="w-5 h-5 mr-2" />
               Images
             </h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {problem.images.map((image, index) => {
-                console.log('Processing image:', image);
-                console.log('Image URL:', image.url);
                 const fullImageUrl = getImageUrl(image.url);
-                console.log('Full image URL:', fullImageUrl);
                 
                 return (
-                  <div key={index} className="relative group">
+                  <div key={index} className="relative group overflow-hidden rounded-lg">
                     <img
                       src={fullImageUrl}
                       alt={`Problem image ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
-                      style={{ 
-                        backgroundColor: '#f3f4f6',
-                        minHeight: '192px',
-                        display: 'block'
-                      }}
-                      onLoad={(e) => {
-                        console.log('✅ Image loaded successfully:', fullImageUrl);
-                        console.log('Image dimensions:', e.target.naturalWidth, 'x', e.target.naturalHeight);
-                        e.target.style.backgroundColor = 'transparent';
-                      }}
-                      onError={(e) => {
-                        console.error('❌ Image failed to load:', fullImageUrl);
-                        e.target.style.backgroundColor = '#fee2e2';
-                        e.target.style.border = '2px dashed #fca5a5';
-                      }}
+                      className="w-full h-48 object-cover transition-transform duration-200 group-hover:scale-105"
+                      loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   </div>
                 );
               })}
