@@ -29,18 +29,37 @@ const app = express();
 // Determine environment
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
-// --- Simplified CORS Configuration ---
+// --- Enhanced CORS Configuration ---
 const allowedOrigins = [
   'http://localhost:5173',              // Vite local
-  'http://localhost:3000',              // Next.js local
+  'http://localhost:3000',              // Next.js local  
   'https://crowdsolved.vercel.app',     // Deployed frontend
+  'https://crowd-solve27.vercel.app',   // Backend URL that frontend is calling
   process.env.CLIENT_URL                // Optional env override
 ].filter(Boolean);
-console.log(allowedOrigins)
+
+console.log('🌐 CORS Origins:', allowedOrigins);
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      console.log('✅ Allowed origins:', allowedOrigins);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Middleware
 app.use(morgan('combined'));
