@@ -33,5 +33,10 @@ export const problemService = {
   upvoteProblem: async (id) => {
     const response = await api.post(`/problems/${id}/upvote`);
     return response.data;
+  },
+
+  getUserProblems: async (userId) => {
+    const response = await api.get(`/users/${userId}/problems`);
+    return response.data;
   }
 };

@@ -18,6 +18,7 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { getImageUrl } from '../utils/imageUtils';
 import SolutionCard from '../components/SolutionCard';
 import SolutionForm from '../components/SolutionForm';
+import CommentSection from '../components/CommentSection';
 
 const ProblemDetail = () => {
   const { id } = useParams();
@@ -417,6 +418,13 @@ const ProblemDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Comments Section */}
+      <CommentSection 
+        entityType="problem" 
+        entityId={id} 
+        title="Discussion" 
+      />
     </div>
   );
 };

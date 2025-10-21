@@ -11,6 +11,7 @@ import ProblemDetail from './pages/ProblemDetail';
 import PostProblem from './pages/PostProblem';
 import SolutionsPage from './pages/SolutionsPage';
 import Profile from './pages/Profile';
+import MyProblems from './pages/MyProblems';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -96,6 +97,11 @@ function App() {
               <Route path="problems/:id" element={<ProblemDetail />} />
               <Route path="post-problem" element={<PostProblem />} />
               <Route path="solutions" element={<SolutionsPage />} />
+              <Route path="my-problems" element={
+                <ProtectedRoute>
+                  <MyProblems />
+                </ProtectedRoute>
+              } />
               <Route path="profile" element={<ProfileRedirect />} />
               <Route path="profile/:userId" element={<Profile />} />
             </Route>
