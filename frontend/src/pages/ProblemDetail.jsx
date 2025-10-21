@@ -113,10 +113,21 @@ const ProblemDetail = () => {
 
   const handleAcceptSolution = async (solutionId) => {
     try {
-      // This would be implemented in the backend
-      toast.success('Solution accepted!');
-      // Update UI to reflect accepted solution
+      const response = await solutionService.acceptSolution(solutionId);
+      if (response.success) {
+        // Update the solutions state to mark this solution as accepted
+        setSolutions(prevSolutions => 
+          prevSolutions.map(sol => ({
+            ...sol,
+            isAccepted: sol._id === solutionId
+          }))
+        );
+        // Update problem status
+        setProblem(prev => ({ ...prev, status: 'Solved' }));
+        toast.success('Solution accepted successfully!');
+      }
     } catch (error) {
+      console.error('Error accepting solution:', error);
       toast.error('Failed to accept solution');
     }
   };

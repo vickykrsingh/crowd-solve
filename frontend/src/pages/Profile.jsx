@@ -204,7 +204,7 @@ const Profile = () => {
             <div className="text-sm text-gray-500">Solutions Provided</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.acceptedSolutions}</div>
+            <div className="text-2xl font-bold text-purple-600">{stats?.acceptedSolutions || 0}</div>
             <div className="text-sm text-gray-500">Accepted Solutions</div>
           </div>
           <div className="text-center">
@@ -265,7 +265,7 @@ const Profile = () => {
                   <div className="flex items-center space-x-3">
                     <LightBulbIcon className="w-8 h-8 text-green-600" />
                     <div>
-                      <div className="text-xl font-bold text-green-900">{stats.acceptanceRate}%</div>
+                      <div className="text-xl font-bold text-green-900">{stats?.acceptanceRate || 0}%</div>
                       <div className="text-sm text-green-600">Acceptance Rate</div>
                     </div>
                   </div>
