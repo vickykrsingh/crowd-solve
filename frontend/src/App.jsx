@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProblemsPage from './pages/ProblemsPage';
 import ProblemDetail from './pages/ProblemDetail';
 import PostProblem from './pages/PostProblem';
+import SolutionsPage from './pages/SolutionsPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -79,6 +80,7 @@ function App() {
               <Route path="problems" element={<ProblemsPage />} />
               <Route path="problems/:id" element={<ProblemDetail />} />
               <Route path="post-problem" element={<PostProblem />} />
+              <Route path="solutions" element={<SolutionsPage />} />
             </Route>
           </Routes>
         </div>

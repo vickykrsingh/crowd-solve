@@ -139,7 +139,7 @@ export const getProblemById = async (req, res) => {
         }
       });
 
-    if (!problem || !problem.isActive) {
+    if (!problem) {
       return errorResponse(res, 'Problem not found', 404);
     }
 

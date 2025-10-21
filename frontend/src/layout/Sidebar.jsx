@@ -20,9 +20,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Problems', href: '/problems', icon: ExclamationTriangleIcon },
+    { name: 'Solutions', href: '/solutions', icon: ChatBubbleLeftRightIcon },
     ...(isAuthenticated ? [
       { name: 'Post Problem', href: '/post-problem', icon: PlusIcon },
-      { name: 'My Problems', href: '/my-problems', icon: ChatBubbleLeftRightIcon },
+      { name: 'My Problems', href: '/my-problems', icon: UserIcon },
       { name: 'Profile', href: '/profile', icon: UserIcon },
     ] : [])
   ];

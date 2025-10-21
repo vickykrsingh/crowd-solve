@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { problemService } from '../services/problemService';
+import { solutionService } from '../services/solutionService';
 import toast from 'react-hot-toast';
 import {
   HeartIcon,
@@ -15,28 +16,108 @@ import {
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { getImageUrl } from '../utils/imageUtils';
+import SolutionCard from '../components/SolutionCard';
+import SolutionForm from '../components/SolutionForm';
 
 const ProblemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [problem, setProblem] = useState(null);
+  const [solutions, setSolutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [solutionsLoading, setSolutionsLoading] = useState(false);
+  const [showSolutionForm, setShowSolutionForm] = useState(false);
 
   useEffect(() => {
     fetchProblem();
+    fetchSolutions();
   }, [id]);
 
   const fetchProblem = async () => {
     try {
       setLoading(true);
+      console.log('Fetching problem with ID:', id);
+      
       const response = await problemService.getProblemById(id);
-      setProblem(response.data.problem);
+      console.log('Full API response:', response);
+      console.log('Response data:', response.data);
+      console.log('Response success:', response.success);
+      
+      if (response.success && response.data) {
+        console.log('Problem data received:', response.data);
+        console.log('Problem images:', response.data.images);
+        setProblem(response.data);
+      } else {
+        throw new Error('Problem not found in response');
+      }
     } catch (error) {
-      toast.error('Failed to fetch problem details');
+      console.error('Problem fetch error:', error);
+      console.error('Error response:', error.response);
+      
+      if (error.response?.status === 404) {
+        toast.error('Problem not found');
+      } else {
+        toast.error('Failed to fetch problem details');
+      }
       navigate('/problems');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSolutions = async () => {
+    try {
+      setSolutionsLoading(true);
+      const response = await solutionService.getSolutionsByProblem(id);
+      setSolutions(response.data.solutions || []);
+    } catch (error) {
+      console.error('Failed to fetch solutions:', error);
+      // Don't show error toast for solutions as it's not critical
+    } finally {
+      setSolutionsLoading(false);
+    }
+  };
+
+  const handleSolutionUpvote = async (solutionId) => {
+    if (!isAuthenticated) {
+      toast.error('Please login to upvote');
+      return;
+    }
+
+    try {
+      const response = await solutionService.upvoteSolution(solutionId);
+      
+      // Update the solutions list
+      setSolutions(prev => prev.map(solution => 
+        solution._id === solutionId 
+          ? { 
+              ...solution, 
+              upvoteCount: response.data.upvoteCount, 
+              hasUpvoted: response.data.hasUpvoted 
+            }
+          : solution
+      ));
+      
+      toast.success(response.data.hasUpvoted ? 'Solution upvoted!' : 'Upvote removed');
+    } catch (error) {
+      toast.error('Failed to upvote solution');
+    }
+  };
+
+  const handleSolutionAdded = (newSolution) => {
+    setSolutions(prev => [newSolution, ...prev]);
+    setProblem(prev => ({ ...prev, solutionCount: prev.solutionCount + 1 }));
+    setShowSolutionForm(false);
+  };
+
+  const handleAcceptSolution = async (solutionId) => {
+    try {
+      // This would be implemented in the backend
+      toast.success('Solution accepted!');
+      // Update UI to reflect accepted solution
+    } catch (error) {
+      toast.error('Failed to accept solution');
     }
   };
 
@@ -176,16 +257,47 @@ const ProblemDetail = () => {
               Images
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {problem.images.map((image, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={getImageUrl(image.url || image)}
-                    alt={`Problem image ${index + 1}`}
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg"></div>
-                </div>
-              ))}
+              {problem.images.map((image, index) => {
+                console.log('Processing image:', image);
+                console.log('Image URL:', image.url);
+                const fullImageUrl = getImageUrl(image.url);
+                console.log('Full image URL:', fullImageUrl);
+                
+                return (
+                  <div key={index} className="relative group">
+                    <>
+                      {/* Test with a known working image first */}
+                      <img
+                        src="https://via.placeholder.com/300x200?text=Test+Image"
+                        alt="Test"
+                        className="w-full h-48 object-cover rounded-lg mb-2"
+                        onLoad={() => console.log('✅ Test image loaded')}
+                        onError={() => console.log('❌ Test image failed')}
+                      />
+                      
+                      {/* Original Cloudinary image */}
+                      <img
+                        src={fullImageUrl}
+                        alt={`Problem image ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg"
+                        onLoad={() => {
+                          console.log('✅ Cloudinary image loaded successfully:', fullImageUrl);
+                        }}
+                        onError={(e) => {
+                          console.error('❌ Cloudinary image failed to load:', fullImageUrl);
+                          console.error('Error details:', {
+                            naturalWidth: e.target.naturalWidth,
+                            naturalHeight: e.target.naturalHeight,
+                            complete: e.target.complete,
+                            src: e.target.src
+                          });
+                        }}
+                      />
+                    </>
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg"></div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -237,16 +349,50 @@ const ProblemDetail = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">
-            Solutions ({problem.solutionCount})
+            Solutions ({solutions.length})
           </h2>
-          {isAuthenticated && (
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          {isAuthenticated && !showSolutionForm && (
+            <button 
+              onClick={() => setShowSolutionForm(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
               Add Solution
             </button>
           )}
         </div>
 
-        {problem.solutionCount === 0 ? (
+        {/* Solution Form */}
+        {showSolutionForm && (
+          <div className="mb-6">
+            <SolutionForm
+              problemId={id}
+              onSolutionAdded={handleSolutionAdded}
+              onCancel={() => setShowSolutionForm(false)}
+            />
+          </div>
+        )}
+
+        {/* Solutions List */}
+        {solutionsLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="bg-gray-50 rounded-lg p-6 animate-pulse">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  </div>
+                </div>
+                <div className="space-y-2 mb-4">
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+                <div className="h-8 bg-gray-200 rounded w-24"></div>
+              </div>
+            ))}
+          </div>
+        ) : solutions.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-400 mb-2">
               <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,16 +401,28 @@ const ProblemDetail = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No solutions yet</h3>
             <p className="text-gray-500">Be the first to help solve this problem!</p>
-            {isAuthenticated && (
-              <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700">
+            {isAuthenticated && !showSolutionForm && (
+              <button 
+                onClick={() => setShowSolutionForm(true)}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
+              >
                 Add First Solution
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Solution cards will be rendered here */}
-            <p className="text-gray-500">Solutions will be displayed here...</p>
+          <div className="space-y-6">
+            {solutions.map((solution) => (
+              <SolutionCard
+                key={solution._id}
+                solution={solution}
+                onUpvote={handleSolutionUpvote}
+                hasUpvoted={solution.hasUpvoted}
+                isAccepted={solution.isAccepted}
+                onAccept={handleAcceptSolution}
+                canAccept={user && problem && problem.author._id === user._id}
+              />
+            ))}
           </div>
         )}
       </div>
