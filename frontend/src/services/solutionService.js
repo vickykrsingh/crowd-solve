@@ -1,6 +1,11 @@
 import api from './api.js';
 
 export const solutionService = {
+  getAllSolutions: async (params = {}) => {
+    const response = await api.get('/solutions', { params });
+    return response.data;
+  },
+
   getSolutionsByProblem: async (problemId) => {
     const response = await api.get(`/solutions/problem/${problemId}`);
     return response.data;
@@ -28,6 +33,11 @@ export const solutionService = {
 
   upvoteSolution: async (id) => {
     const response = await api.post(`/solutions/${id}/upvote`);
+    return response.data;
+  },
+
+  acceptSolution: async (id) => {
+    const response = await api.post(`/solutions/${id}/accept`);
     return response.data;
   }
 };

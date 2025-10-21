@@ -120,6 +120,46 @@ export const getSolutionsByProblem = async (req, res) => {
   }
 };
 
+export const getAllSolutions = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const skip = (page - 1) * limit;
+
+    const sortOptions = {
+      createdAt: { createdAt: -1 },
+      upvotes: { upvoteCount: -1, createdAt: -1 },
+      acceptance: { isAccepted: -1, upvoteCount: -1, createdAt: -1 }
+    };
+
+    const sortQuery = sortOptions[sortBy] || sortOptions.createdAt;
+
+    const solutions = await Solution.find({ isActive: true })
+      .populate('author', 'username avatar reputation')
+      .populate('problem', 'title slug')
+      .sort(sortQuery)
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Solution.countDocuments({ isActive: true });
+
+    successResponse(res, {
+      solutions,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalSolutions: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    }, 'All solutions retrieved successfully');
+  } catch (error) {
+    console.error('Get all solutions error:', error);
+    errorResponse(res, 'Failed to retrieve solutions', 500);
+  }
+};
+
 export const updateSolution = async (req, res) => {
   try {
     const { id } = req.params;

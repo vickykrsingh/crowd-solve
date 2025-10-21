@@ -1,7 +1,8 @@
 import express from 'express';
 import { 
   createSolution, 
-  getSolutionsByProblem, 
+  getSolutionsByProblem,
+  getAllSolutions,
   updateSolution, 
   deleteSolution,
   upvoteSolution,
@@ -13,6 +14,7 @@ import { uploadMultiple } from '../utils/upload.js';
 const router = express.Router();
 
 router.post('/', authenticateToken, uploadMultiple, createSolution);
+router.get('/', getAllSolutions);
 router.get('/problem/:problemId', getSolutionsByProblem);
 router.put('/:id', authenticateToken, updateSolution);
 router.delete('/:id', authenticateToken, deleteSolution);

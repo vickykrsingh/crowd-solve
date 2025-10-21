@@ -31,10 +31,21 @@ const SolutionsPage = () => {
   const fetchSolutions = async () => {
     try {
       setLoading(true);
-      // Note: This would need a new endpoint for all solutions
-      // For now, this is a placeholder structure
-      setSolutions([]);
+      const params = {
+        sortBy: filters.sortBy,
+        search: filters.search || undefined
+      };
+      
+      const response = await solutionService.getAllSolutions(params);
+      if (response.success && response.data) {
+        const solutionsData = Array.isArray(response.data.solutions) ? response.data.solutions : [];
+        setSolutions(solutionsData);
+      } else {
+        setSolutions([]);
+      }
     } catch (error) {
+      console.error('Error fetching solutions:', error);
+      setSolutions([]);
       toast.error('Failed to fetch solutions');
     } finally {
       setLoading(false);
