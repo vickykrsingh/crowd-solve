@@ -8,7 +8,7 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 
-const CommentSection = ({ entityType, entityId, title = 'Comments' }) => {
+const CommentSection = ({ solutionId, title = 'Comments' }) => {
   const { user, isAuthenticated } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,18 +17,24 @@ const CommentSection = ({ entityType, entityId, title = 'Comments' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchComments();
-  }, [entityType, entityId]);
+    if (solutionId) {
+      fetchComments();
+    }
+  }, [solutionId]);
 
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const response = await commentService.getComments(entityType, entityId);
-      if (response.success) {
-        setComments(response.data);
+      const response = await commentService.getComments(solutionId);
+      if (response.success && response.data) {
+        const commentsData = Array.isArray(response.data.comments) ? response.data.comments : [];
+        setComments(commentsData);
+      } else {
+        setComments([]);
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
+      setComments([]);
       // Don't show error toast for comments as it's not critical
     } finally {
       setLoading(false);
@@ -52,8 +58,7 @@ const CommentSection = ({ entityType, entityId, title = 'Comments' }) => {
       setIsSubmitting(true);
       const response = await commentService.createComment({
         content: newComment.trim(),
-        entityType,
-        entityId
+        solutionId
       });
 
       if (response.success) {
@@ -161,7 +166,7 @@ const CommentSection = ({ entityType, entityId, title = 'Comments' }) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {comments.map((comment) => (
+          {Array.isArray(comments) && comments.map((comment) => (
             <Comment
               key={comment._id}
               comment={comment}

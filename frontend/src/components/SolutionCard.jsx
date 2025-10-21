@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   HeartIcon,
   ChatBubbleLeftIcon,
   ClockIcon,
   UserIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import CommentSection from './CommentSection';
 
 const SolutionCard = ({ solution, onUpvote, hasUpvoted = false, isAccepted = false, onAccept, canAccept = false }) => {
+  const [showComments, setShowComments] = useState(false);
+  
   const {
     _id,
     description,
@@ -51,11 +56,11 @@ const SolutionCard = ({ solution, onUpvote, hasUpvoted = false, isAccepted = fal
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-            {author?.name?.charAt(0).toUpperCase() || 'U'}
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+            {author?.username?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
-            <h4 className="font-medium text-gray-900">{author?.name || 'Anonymous'}</h4>
+            <h4 className="font-medium text-gray-900">{author?.username || 'Anonymous'}</h4>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <ClockIcon className="w-4 h-4" />
               <span>{formatDate(createdAt)}</span>
@@ -111,22 +116,40 @@ const SolutionCard = ({ solution, onUpvote, hasUpvoted = false, isAccepted = fal
             <span>{upvoteCount}</span>
           </button>
 
-          {/* Comments Count */}
-          <div className="inline-flex items-center space-x-1 text-sm text-gray-500">
+          {/* Comments Toggle Button */}
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
             <ChatBubbleLeftIcon className="w-4 h-4" />
             <span>{commentCount} comments</span>
-          </div>
+            {showComments ? (
+              <ChevronUpIcon className="w-4 h-4" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         {/* Additional Actions */}
         <div className="flex items-center space-x-2">
           {author && (
             <div className="text-xs text-gray-400">
-              by {author.name}
+              by {author.username}
             </div>
           )}
         </div>
       </div>
+
+      {/* Expandable Comments Section */}
+      {showComments && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <CommentSection 
+            solutionId={_id}
+            title="Comments" 
+          />
+        </div>
+      )}
     </div>
   );
 };

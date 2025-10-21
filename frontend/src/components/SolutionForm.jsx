@@ -34,7 +34,7 @@ const SolutionForm = ({ problemId, onSolutionAdded, onCancel }) => {
     try {
       const solutionData = {
         problemId,
-        description: description.trim()
+        content: description.trim()
       };
 
       // Import solutionService dynamically to avoid circular imports

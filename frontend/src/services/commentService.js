@@ -1,8 +1,8 @@
 import api from './api.js';
 
 export const commentService = {
-  getComments: async (entityType, entityId) => {
-    const response = await api.get(`/comments/${entityType}/${entityId}`);
+  getComments: async (solutionId) => {
+    const response = await api.get(`/comments/solution/${solutionId}`);
     return response.data;
   },
 
