@@ -6,16 +6,16 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 // Import database connection
-import connectDB from '../lib/db.js';
+import connectDB from './lib/db.js';
 
 // Import routes
-import authRoutes from '../routes/auth.js';
-import problemRoutes from '../routes/problems.js';
-import solutionRoutes from '../routes/solutions.js';
-import commentRoutes from '../routes/comments.js';
-import upvoteRoutes from '../routes/upvotes.js';
-import notificationRoutes from '../routes/notifications.js';
-import userRoutes from '../routes/users.js';
+import authRoutes from './routes/auth.js';
+import problemRoutes from './routes/problems.js';
+import solutionRoutes from './routes/solutions.js';
+import commentRoutes from './routes/comments.js';
+import upvoteRoutes from './routes/upvotes.js';
+import notificationRoutes from './routes/notifications.js';
+import userRoutes from './routes/users.js';
 
 // Load environment variables
 dotenv.config();
