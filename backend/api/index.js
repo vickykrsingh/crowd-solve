@@ -27,14 +27,31 @@ connectDB();
 const app = express();
 
 // Determine environment
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// --- Simplified CORS Configuration for Vercel ---
-console.log('🌐 CORS handled by Vercel configuration');
+// --- CORS Configuration ---
+const allowedOrigins = [
+  'http://localhost:5173',              // Vite local
+  'http://localhost:3000',              // Next.js local
+  'https://crowdsolved.vercel.app',     // Production frontend
+  process.env.CLIENT_URL                // Environment override
+].filter(Boolean);
 
-// Simple CORS middleware as backup
+console.log('🌐 Allowed CORS origins:', allowedOrigins);
+
+// CORS middleware
 app.use(cors({
-  origin: true, // Allow all origins since Vercel handles CORS
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -128,7 +145,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    isVercel: !!process.env.VERCEL,
+    server: 'Render',
     url: req.url,
     method: req.method,
     endpoints: {
@@ -199,16 +216,15 @@ app.use((req, res) => {
   });
 });
 
-// --- Socket.IO Setup (only for local/dev) ---
-if (!isProduction) {
-  const server = createServer(app);
-  const io = new Server(server, {
-    cors: {
-      origin: ["http://localhost:5173", "http://localhost:3000"],
-      credentials: true,
-      methods: ['GET', 'POST']
-    }
-  });
+// --- Socket.IO Setup ---
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST']
+  }
+});
 
   const activeViewers = new Map();
 
@@ -272,14 +288,8 @@ if (!isProduction) {
     });
   });
 
-  app.set('socketio', io);
+app.set('socketio', io);
 
-  // Start server only locally
-  const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
-
-// --- Export for Vercel Serverless Functions ---
+// Export both app and server
 export default app;
+export { server };

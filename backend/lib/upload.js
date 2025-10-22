@@ -15,7 +15,7 @@ const configureCloudinary = () => {
   });
 };
 
-// Configure multer for memory storage (since Vercel is serverless)
+// Configure multer for memory storage
 const storage = multer.memoryStorage();
 
 export const upload = multer({ 

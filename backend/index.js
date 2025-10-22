@@ -3,14 +3,13 @@ import dotenv from 'dotenv';
 // Load environment variables as early as possible
 dotenv.config();
 
-import app from "./api/index.js";
+import app, { server } from "./api/index.js";
 
-// For local development
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(8080, () => {
-    console.log("Server is running on port 8080");
-  });
-}
+// Start server for both local development and production
+const PORT = process.env.PORT || 8080;
 
-// Export for Vercel
-export default app;
+server.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Socket.IO enabled`);
+});
