@@ -121,18 +121,31 @@ app.use('/api/users', userRoutes);
 
 // --- Root Route ---
 app.get('/', (req, res) => {
+  console.log('Root route hit:', req.url);
   res.json({
     status: 'success',
     message: 'Crowd Solve API is running successfully! 🚀',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    isVercel: !!process.env.VERCEL,
+    url: req.url,
+    method: req.method,
     endpoints: {
       health: '/api/health',
       api: '/api',
       problems: '/api/problems',
       auth: '/api/auth'
     }
+  });
+});
+
+// --- Test Route ---
+app.get('/test', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Test route is working!',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -268,5 +281,5 @@ if (!isProduction) {
   });
 }
 
-// --- Export Express App for Vercel ---
+// --- Export for Vercel Serverless Functions ---
 export default app;
