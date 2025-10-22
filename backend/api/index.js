@@ -119,8 +119,21 @@ app.use('/api/upvotes', upvoteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 
+// --- Root Route ---
 app.get('/', (req, res) => {
-  res.send('Welcome to the Crowd Solve API');
+  res.json({
+    status: 'success',
+    message: 'Crowd Solve API is running successfully! 🚀',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/api/health',
+      api: '/api',
+      problems: '/api/problems',
+      auth: '/api/auth'
+    }
+  });
 });
 
 // --- Default API Route ---
@@ -137,6 +150,21 @@ app.get('/api', (req, res) => {
       '/api/notifications',
       '/api/users'
     ]
+  });
+});
+
+// --- 404 Handler for unmatched routes ---
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+    availableRoutes: {
+      root: '/',
+      api: '/api',
+      health: '/api/health',
+      problems: '/api/problems',
+      auth: '/api/auth'
+    }
   });
 });
 
