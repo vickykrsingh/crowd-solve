@@ -11,10 +11,14 @@ export default async function handler(req, res) {
 
   res.status(200).json({
     success: true,
-    message: 'Test endpoint is working! 🚀',
-    url: req.url,
-    method: req.method,
+    message: 'Crowd Solve API is working! 🚀',
+    version: '1.0.0',
     timestamp: new Date().toISOString(),
-    vercel: true
+    environment: 'production',
+    endpoints: {
+      test: '/test',
+      api: '/api',
+      health: '/health'
+    }
   });
 }
