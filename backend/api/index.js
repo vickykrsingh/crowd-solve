@@ -119,6 +119,10 @@ app.use('/api/upvotes', upvoteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 
+app.get('/', (req, res) => {
+  res.send('Welcome to the Crowd Solve API');
+});
+
 // --- Default API Route ---
 app.get('/api', (req, res) => {
   res.json({
