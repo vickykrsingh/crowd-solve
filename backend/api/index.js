@@ -31,10 +31,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // --- CORS Configuration ---
 const allowedOrigins = [
-  'http://localhost:5173',              // Vite local
-  'http://localhost:3000',              // Next.js local
-  'https://crowdsolved.vercel.app',     // Production frontend
-  process.env.CLIENT_URL                // Environment override
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://crowdsolved.vercel.app',
+  process.env.CLIENT_URL
 ].filter(Boolean);
 
 console.log('🌐 Allowed CORS origins:', allowedOrigins);
