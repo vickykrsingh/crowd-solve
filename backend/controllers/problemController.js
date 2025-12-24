@@ -66,7 +66,14 @@ export const createProblem = async (req, res) => {
 
     // Parse location if provided
     let locationData = null;
-    if (location) {
+    if (req.body['location[address]'] || req.body['location[coordinates][0]']) {
+      locationData = {
+        address: req.body['location[address]'] || '',
+        coordinates: req.body['location[coordinates][0]'] && req.body['location[coordinates][1]'] 
+          ? [parseFloat(req.body['location[coordinates][0]']), parseFloat(req.body['location[coordinates][1]'])]
+          : null
+      };
+    } else if (location) {
       try {
         locationData = typeof location === 'string' ? JSON.parse(location) : location;
       } catch (parseError) {
