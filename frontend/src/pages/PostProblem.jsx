@@ -107,11 +107,12 @@ const PostProblem = () => {
         
         try {
           // You can integrate with a geocoding service here to get the address
-          // For now, we'll just set the coordinates
+          // For now, we'll set the coordinates and show them in the address field
+          const locationText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setFormData(prev => ({
             ...prev,
             location: {
-              ...prev.location,
+              address: prev.location.address || locationText,
               coordinates: [longitude, latitude]
             }
           }));
@@ -175,7 +176,8 @@ const PostProblem = () => {
       }
       
       if (formData.location.coordinates) {
-        submitData.append('location[coordinates]', JSON.stringify(formData.location.coordinates));
+        submitData.append('location[coordinates][0]', formData.location.coordinates[0]);
+        submitData.append('location[coordinates][1]', formData.location.coordinates[1]);
       }
 
       images.forEach((image) => {
